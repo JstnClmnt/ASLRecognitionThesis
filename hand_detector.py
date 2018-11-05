@@ -102,13 +102,12 @@ def draw_hand_keypoints(orig_img, hand_keypoints, left_top):
         for finger_line_index in finger_indices:
             keypoint_from = hand_keypoints[finger_line_index[0]]
             keypoint_to = hand_keypoints[finger_line_index[1]]
-
             if keypoint_from:
-                keypoint_from_x, keypoint_from_y, _ = keypoint_from
+                keypoint_from_x, keypoint_from_y = keypoint_from
                 cv2.circle(img, (keypoint_from_x + left, keypoint_from_y + top), 3, finger_colors[i], -1)
 
             if keypoint_to:
-                keypoint_to_x, keypoint_to_y, _ = keypoint_to
+                keypoint_to_x, keypoint_to_y = keypoint_to
                 cv2.circle(img, (keypoint_to_x + left, keypoint_to_y + top), 3, finger_colors[i], -1)
 
             if keypoint_from and keypoint_to:
