@@ -20,7 +20,7 @@ if __name__ == '__main__':
     hand_detector = HandDetector("handnet", "models/handnet.npz", device=args.gpu)
 
     # read image
-    img = cv2.imread('data/doctor2.png')
+    img = cv2.imread('photos/6.png')
 
     # inference
     print("Estimating pose...")
@@ -42,7 +42,7 @@ if __name__ == '__main__':
                     hand_keypoints[x]=list(np.delete(hand_keypoints[x],2))
                     hand_keypoints[x]=[int(y) for y in hand_keypoints[x]]
             res_img = draw_hand_keypoints(res_img, hand_keypoints, (bbox[0], bbox[1]))
-            print("Right")
+            print("Left Hand")
             print(hand_keypoints)
             cv2.rectangle(res_img, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (255, 255, 255), 1)
 
@@ -55,7 +55,7 @@ if __name__ == '__main__':
                     hand_keypoints[x]=list(np.delete(hand_keypoints[x],2))
                     hand_keypoints[x]=[int(y) for y in hand_keypoints[x]]
             res_img = draw_hand_keypoints(res_img, hand_keypoints, (bbox[0], bbox[1]))
-            print("Left")
+            print("Right Hand")
             print(hand_keypoints)
             cv2.rectangle(res_img, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (255, 255, 255), 1)
         print("Body Pose")
@@ -71,7 +71,7 @@ if __name__ == '__main__':
         print(person_pose)
 
     print('Saving result into result.png...')
-    cv2.imwrite('result.png', res_img)
+    cv2.imwrite('photos/6result.png', res_img)
 
 
 print("--- %s seconds ---" % (time.time() - start_time))
