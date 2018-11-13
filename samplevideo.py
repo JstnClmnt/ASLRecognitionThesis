@@ -32,7 +32,7 @@ if __name__ == '__main__':
     print(frame_tracker)
     left=0
     right=0
-    newdf=pd.read_csv("monday.csv")
+    newdf=pd.read_csv("sample.csv")
     while ret:
         ret, img = cap.read()
         # get video frame
@@ -115,13 +115,13 @@ if __name__ == '__main__':
             dfright=pd.DataFrame(data=right)
             dfright=dfright.T
             dfright=dfright.rename(columns={0:"right_1",1:"right_2",2:"right_3",3:"right_4",4:"right_5",5:"right_6",6:"right_7",7:"right_8",8:"right_9",9:"right_10",10:"right_11",11:"right_12",12:"right_13",13:"right_14",14:"right_15",15:"right_16",16:"right_17",17:"right_18",18:"right_19",19:"right_20",20:"right_21"})
-            df2=pd.concat([dfhead, dfleft,dfright], axis=1, sort=False)
+            df2=pd.concat([dfhead, dfleft,dfright], axis=1)
             df2["frame"]=framecounter
             df2["gesture"]="Monday"
             df2["speaker"]="Kalbo"
             framecounter=framecounter+1
             df2["frame"]=df2["frame"].astype(int)
-            newdf=newdf.append(df2)
+            newdf=newdf.append(df2,sort=False)
         else:
             cv2.imshow("result", img)
         counter=counter+1
@@ -130,8 +130,8 @@ if __name__ == '__main__':
             break#print(df)
     cap.release()
     cv2.destroyAllWindows()
-    newdf.set_index(["gesture","frame"],inplace=False)
-    newdf.to_csv("monday.csv")
+    #newdf.set_index(["gesture","frame"],inplace=False)
+    newdf.to_csv("testsave.csv",index=False)
 
 
 
