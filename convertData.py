@@ -1,3 +1,5 @@
+import warnings
+warnings.filterwarnings("ignore")
 import cv2
 import argparse
 import chainer
@@ -35,6 +37,7 @@ def buildGestureDict(path):
 
 		return gestureDict
 if __name__ == '__main__':
+    start=time.time()
     parser = argparse.ArgumentParser(description='Pose detector')
     parser.add_argument('--gpu', '-g', type=int, default=-1, help='GPU ID (negative value indicates CPU)')
     args = parser.parse_args()
@@ -42,11 +45,13 @@ if __name__ == '__main__':
     # load model
     pose_detector = PoseDetector("posenet", "models/coco_posenet.npz", device=args.gpu)
     hand_detector = HandDetector("handnet", "models/handnet.npz", device=args.gpu)
-    dataset=buildGestureDict("gestures/")
+    dataset=buildGestureDict("dataset/")
     newdf=pd.read_csv("sample.csv")
     for gesture in dataset:
         gesturedf=pd.read_csv("sample.csv")
         for video in dataset[gesture]["videos"]:
+            print("Currently processing the video for "+video["filename"])
+            startvideo=time.time()
             cap = cv2.VideoCapture(video["filepath"])
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
             cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
@@ -58,7 +63,7 @@ if __name__ == '__main__':
             df=pd.DataFrame(columns=["Head","Left","Right"])
             frame_tracker=int(amount_of_frames/12)
             framecounter=0
-            print(frame_tracker)
+            #print(frame_tracker)
             left=0
             right=0
             while ret:
@@ -73,7 +78,7 @@ if __name__ == '__main__':
                     for person_pose in person_pose_array:
                         unit_length = pose_detector.get_unit_length(person_pose)
                         # hands estimation
-                        print("Estimating hands keypoints...")
+                        #print("Estimating hands keypoints...")
                         hands = pose_detector.crop_hands(img, person_pose, unit_length)
                         if hands["left"] is not None:
                             hand_img = hands["left"]["img"]
@@ -102,7 +107,7 @@ if __name__ == '__main__':
                             cv2.rectangle(res_img, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (255, 255, 255), 1)
                         else:
                             right=[[1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000]]
-                        print("Body Pose")
+                        #print("Body Pose")
                         person_pose=np.delete(person_pose,9,0)
                         person_pose=np.delete(person_pose,9,0)
                         person_pose=np.delete(person_pose,10,0)
@@ -112,11 +117,11 @@ if __name__ == '__main__':
                             if(person_pose[z]!=None):
                                 person_pose[z]=list(np.delete(person_pose[z],2))
                                 person_pose[z]=[int(a) for a in person_pose[z]]
-                        print(person_pose)
-                        print("Left")
-                        print(left)
-                        print("Right")
-                        print(right)
+                        #print(person_pose)
+                        #print("Left")
+                        #print(left)
+                        #print("Right")
+                        #print(right)
                     cv2.imshow("result", res_img)
                     head=person_pose
                     for x in range(len(head)):
@@ -159,7 +164,11 @@ if __name__ == '__main__':
                     break#print(df)
             cap.release()
             cv2.destroyAllWindows()
-        gesturedf.to_csv(gesture+".csv",index=False)
-    newdf.to_csv("dataset.csv",index=False)
+        gesturedf.to_csv("gestures720/"+gesture+".csv",index=False)
+        print("Done Recording for: "+gesture)
+        print("Took "+str(time.time()-startvideo)+"seconds")
+    newdf.to_csv("dataset720.csv",index=False)
+    print("Done Recording Whole Dataset")
+    print("Took "+str(time.time()-start)+"seconds")
 
 

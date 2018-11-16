@@ -4,7 +4,8 @@ import chainer
 from pose_detector import PoseDetector, draw_person_pose
 from hand_detector import HandDetector, draw_hand_keypoints
 chainer.using_config('enable_backprop', False)
-
+import warnings
+warnings.filterwarnings("ignore")
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Pose detector')
     parser.add_argument('--gpu', '-g', type=int, default=-1, help='GPU ID (negative value indicates CPU)')
