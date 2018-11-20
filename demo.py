@@ -20,7 +20,7 @@ if __name__ == '__main__':
     hand_detector = HandDetector("handnet", "models/handnet.npz", device=args.gpu)
 
     # read image
-    img = cv2.imread('photos/6.png')
+    img = cv2.imread('data/wanmyg.png')
 
     # inference
     print("Estimating pose...")

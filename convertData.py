@@ -32,7 +32,6 @@ def buildGestureDict(path):
 							'gesture': split[1],
 							'actor': split[2].split('.')[0]
 						}
-
 						gesture['videos'].append(video)
 
 		return gestureDict
@@ -45,12 +44,14 @@ if __name__ == '__main__':
     # load model
     pose_detector = PoseDetector("posenet", "models/coco_posenet.npz", device=args.gpu)
     hand_detector = HandDetector("handnet", "models/handnet.npz", device=args.gpu)
-    dataset=buildGestureDict("dataset/")
+    dataset=buildGestureDict("datasetpending/")
     newdf=pd.read_csv("sample.csv")
     for gesture in dataset:
         gesturedf=pd.read_csv("sample.csv")
         for video in dataset[gesture]["videos"]:
             print("Currently processing the video for "+video["filename"])
+            if(video["actor"]=="min" or video["actor"]=="jolo" or video["actor"]=="jer"):
+                continue
             startvideo=time.time()
             cap = cv2.VideoCapture(video["filepath"])
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
@@ -76,6 +77,9 @@ if __name__ == '__main__':
                 res_img = cv2.addWeighted(img, 0.6, draw_person_pose(img, person_pose_array), 0.4, 0)
                 if (counter%frame_tracker==0):
                     for person_pose in person_pose_array:
+                        firstPerson=True
+                        if not firstPerson:
+                            continue
                         unit_length = pose_detector.get_unit_length(person_pose)
                         # hands estimation
                         #print("Estimating hands keypoints...")
@@ -107,7 +111,7 @@ if __name__ == '__main__':
                             cv2.rectangle(res_img, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (255, 255, 255), 1)
                         else:
                             right=[[1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000], [1000,1000]]
-                        #print("Body Pose")
+                        print("Body Pose")
                         person_pose=np.delete(person_pose,9,0)
                         person_pose=np.delete(person_pose,9,0)
                         person_pose=np.delete(person_pose,10,0)
@@ -117,11 +121,11 @@ if __name__ == '__main__':
                             if(person_pose[z]!=None):
                                 person_pose[z]=list(np.delete(person_pose[z],2))
                                 person_pose[z]=[int(a) for a in person_pose[z]]
-                        #print(person_pose)
-                        #print("Left")
-                        #print(left)
-                        #print("Right")
-                        #print(right)
+                        print(person_pose)
+                        print("Left")
+                        print(left)
+                        print("Right")
+                        print(right)
                     cv2.imshow("result", res_img)
                     head=person_pose
                     for x in range(len(head)):
@@ -156,6 +160,7 @@ if __name__ == '__main__':
                     df2["frame"]=df2["frame"].astype(int)
                     newdf=newdf.append(df2,sort=False)
                     gesturedf=gesturedf.append(df2,sort=False)
+                    firstPerson=False
                 else:
                     cv2.imshow("result", img)
                 counter=counter+1
@@ -164,10 +169,10 @@ if __name__ == '__main__':
                     break#print(df)
             cap.release()
             cv2.destroyAllWindows()
-        gesturedf.to_csv("gestures720/"+gesture+".csv",index=False)
+        gesturedf.to_csv("datasetpending/"+gesture+".csv",index=False)
         print("Done Recording for: "+gesture)
         print("Took "+str(time.time()-startvideo)+"seconds")
-    newdf.to_csv("dataset720.csv",index=False)
+    newdf.to_csv("datasetpending/datasetpending.csv",index=False)
     print("Done Recording Whole Dataset")
     print("Took "+str(time.time()-start)+"seconds")
 
