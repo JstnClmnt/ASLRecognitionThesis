@@ -1,8 +1,8 @@
+import numpy as np
 import cv2
 import argparse
 import chainer
 import time
-import numpy as np
 from pose_detector import PoseDetector, draw_person_pose
 from hand_detector import HandDetector, draw_hand_keypoints
 chainer.using_config('enable_backprop', False)
@@ -10,15 +10,69 @@ import pandas as pd
 from sklearn.decomposition import PCA as sklearnPCA
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Pose detector')
+    parser = argparse.ArgumentParser(description='ASL Gesture Interpreter')
+    parser.add_argument('--streamip', type=str, default=None, help='For IP camera compatibility - just enter your phone\'s IP; make sure there is no stream password set')
     parser.add_argument('--gpu', '-g', type=int, default=-1, help='GPU ID (negative value indicates CPU)')
     args = parser.parse_args()
 
     # load model
     pose_detector = PoseDetector("posenet", "models/coco_posenet.npz", device=args.gpu)
     hand_detector = HandDetector("handnet", "models/handnet.npz", device=args.gpu)
+    args = parser.parse_args()
 
-    cap = cv2.VideoCapture('realtestdata/rico2.mp4')
+    cap = None
+    if args.streamip == None:
+        cap = cv2.VideoCapture(0)
+        print("Source: INTERNAL WEBCAM")
+    else:
+        cap = cv2.VideoCapture("http://%s:8080/videofeed" % args.streamip)
+        print("Source: IP CAMERA app @ %s" % args.streamip)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 2000)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 2000)
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    print("Camera resolution: %d x %d" % (width, height))
+    print("--------------------------------------------------------------------")
+    print("Real-Time 2D Sign Language to Text Interpreter Using Pose Estimation")
+    print("with Part Affinity Fields and Hidden Markov Model")
+    print("--------------------------------------------------------------------")
+    print("USING PHASE")
+    print("--------------------------------------------------------------------")
+    print("Press 'q' to start recording.")
+
+    out = None
+    isRecording = False
+
+    while cap.isOpened():
+        ret, frame = cap.read()
+        
+        if ret == True:
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                if isRecording:
+                    print("Recording has finished!")
+                    break
+                else:
+                    isRecording = True
+                    cv2.destroyAllWindows()
+                    out = cv2.VideoWriter('outpy.mp4', fourcc, 30, (width, height))
+                    print("Recording has started. Press 'q' to stop recording and start classifying.")
+
+            if isRecording:
+                # print("Writing...")
+                out.write(frame)
+
+            cv2.imshow("ASL Gesture Interpreter", frame)
+        else:
+            break
+
+    cap.release()
+    out.release()
+    cv2.destroyAllWindows()
+
+    cap = cv2.VideoCapture('outpy.mp4')
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
     amount_of_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
@@ -133,8 +187,4 @@ if __name__ == '__main__':
             break#print(df)
     cap.release()
     cv2.destroyAllWindows()
-    #newdf.set_index(["gesture","frame"],inplace=False)
-    newdf.to_csv("testRico2.csv",index=False)
-
-
-
+    newdf.to_csv("test.csv",index=False)

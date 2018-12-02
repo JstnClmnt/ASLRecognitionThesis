@@ -7,10 +7,11 @@ import math
 import time
 import multiprocessing
 from random import shuffle
+import operator
 np.seterr(invalid='ignore')
 
 def cross_validate(word):
-    data=pd.read_csv("dataset1-6.csv")
+    data=pd.read_csv("dynamic.csv")
     true=0
     traininglength=0
     testlength=0
@@ -23,7 +24,7 @@ def cross_validate(word):
         trainingdata=trainingdata.append(dataperword[dataperword["speaker"]!=speakers[index]])
         testdata=dataperword[dataperword["speaker"]==speakers[index]]
         training=train_all(trainingdata)
-        print(training)
+        #print(training)
         print("Printing HMMs for the word: "+word+"; Test is "+speakers[index])
         guessword=recognize(training,dataperword[dataperword["speaker"]==speakers[index]])
         if(guessword==word):
@@ -41,22 +42,12 @@ def train_all(df):
         for speaker in speakers:
             lengths.append(len(dataword[dataword["speaker"]==speaker]))
         dataword=dataword.drop(columns=[dataword.columns[56],dataword.columns[57],dataword.columns[58]])
+        dataword=(dataword-dataword.min())/(dataword.max()-dataword.min())
+        dataword=dataword.fillna(0.0)
         #BAYESIAN INFORMATION CRITERION FOR SELECTING THE BEST MODEL
-        best_score,best_model=float("inf"),None
-        models[word]=GaussianHMM(n_components=2,covariance_type="diag", n_iter=1000).fit(dataword,lengths)
-        for x in range(2,30):
-            try:
-                model=GaussianHMM(n_components=x,covariance_type="diag", n_iter=1000).fit(dataword,lengths)
-                logL=model.score(dataword,lengths)
-                n_features=dataword.shape[1]
-                n_params =x * (x - 1) + 2 * n_features * x
-                logN = np.log(dataword.shape[0])
-                bic = -2 * logL + n_params * logN
-                if bic < best_score:
-                    best_score, best_model = bic, model
-            except Exception as e:
-                break
-        models[word]=best_model
+        #best_score,best_model=float("inf"),None
+        #print([word,len(dataword),lengths])
+        models[word]=GaussianHMM(n_components=11,covariance_type="spherical", n_iter=1000).fit(dataword,lengths)
     return models
 
 def recognize(dictModels,data):
@@ -64,20 +55,30 @@ def recognize(dictModels,data):
     prob=float("-inf")
     word=None
     data=data.drop(columns=[data.columns[56],data.columns[57],data.columns[58]])
+    data=(data-data.min())/(data.max()-data.min())
+    data=data.fillna(0.0)
     for modelword,model in dictModels.items():
+        x=model.n_components
         try:
-            modelprob=model.decode(data)[0]
-            probmodels[modelword]=modelprob
-            if(modelprob>prob):
-                prob=modelprob
+            logL=model.score(data)
+            n_features=data.shape[1]
+            n_params =x * (x - 1) + 2 * n_features * x
+            logN = np.log(data.shape[0])
+            bic = -2 * logL + n_params * logN
+            #modelprob=model.score(data)
+            probmodels[modelword]=bic
+            if(bic>prob):
+                prob=bic
                 word=modelword
         except Exception as e:
+            probmodels[modelword]=float("-inf")
+            word=modelword
             continue
-
-    print(probmodels)
-    return word
+    print(sorted(probmodels.items(), key=operator.itemgetter(1),reverse=True))
+    #print(probmodels)
+    return sorted(probmodels.items(), key=operator.itemgetter(1),reverse=True)[0][0]
 if __name__ == '__main__':
-    data=pd.read_csv("dataset1-6.csv")
+    data=pd.read_csv("dynamic.csv")
     data=data.replace(0.0,float("inf"))
     gestures=data["gesture"].unique()
     #data=data[data["speaker"]!="ling_f"]
